@@ -1,6 +1,9 @@
 /**
  * A Bot for Slack!
  */
+const YQL = require('yql');
+
+
 
 
 /**
@@ -87,6 +90,32 @@ controller.on('bot_channel_join', function (bot, message) {
 
 controller.hears('hello', 'direct_message', function (bot, message) {
     bot.reply(message, 'Hello!');
+});
+
+// Let's deal with the weather
+controller.hears('.*weather.*s*in\\s([^?.]*)',[ 'direct_message'], function(bot,message) {
+
+    var query = new YQL('select * from weather.forecast where woeid in (select woeid from geo.places(1) where text=@location) and u="c"',);
+    query.setParam('location', message.match[1]);
+    query.exec(function(err, data) {
+        console.log(err);
+        console.log(data.query.results);
+        var location = data.query.results.channel.location;
+        var condition = data.query.results.channel.item.condition;
+        console.log(location);
+
+        console.log('The current weather in ' + location.city + ', ' + location.region + ', '+ location.country +' is ' + condition.temp + ' degrees.');
+        return bot.reply(message, 'The current weather in ' + location.city + ', ' + location.region + ', '+ location.country +' is ' + condition.temp + ' degrees.');
+    });
+
+});
+
+controller.hears('open the (.*) doors',['direct_message'],function(bot,message) {
+    var doorType = message.match[1]; //match[1] is the (.*) group. match[0] is the entire group (open the (.*) doors).
+    if (doorType === 'pod bay') {
+        return bot.reply(message, 'I\'m sorry, Dave. I\'m afraid I can\'t do that.');
+    }
+    return bot.reply(message, 'Okay');
 });
 
 
